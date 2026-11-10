@@ -22,7 +22,7 @@
 
 \begin{document}
 
-\title{Beyond Message Passing: Element Interaction Dynamics for Circuit Representation Learning}
+\title{Dynamic Interactions Define the Set: End-to-End Point-Set Graph Modeling for Circuit Feature Prediction}
 
 \author{\IEEEauthorblockN{Anonymous Author(s)}}
 
@@ -31,7 +31,7 @@
 \begin{abstract}
 In electronic design automation, modeling circuits with neural networks is critical for fast and accurate circuit metric prediction. While circuits are naturally represented as graphs, conventional paradigms face fundamental dilemmas. Node and edge features are difficult to align into a unified modality, which forces existing models to discard edge parasitics or compress them into scalars. Furthermore, deep aggregation along multi-hop logic chains induces severe over-smoothing and representation collapse.
 
-To resolve these challenges, we propose an \textbf{Element Interaction Dynamics} framework that models circuit behavior from the perspective of particle interaction physics. We first project heterogeneous circuit components, including standard cells, pins, and wire interconnects, into a unified point set of homogeneous physical elements. Within this set, every element pair with an electrical relationship evolves through a learnable interaction field. Specifically, a pairwise displacement operator takes the joint states and continuous physical impedances, such as wire resistance, parasitic capacitance, and driver loads, to compute unconstrained vector displacements in a continuous latent space. Concurrently, a localized sibling-competition mechanism dynamically arbitrates multi-fanin drive contention, preserving causal monotonicity along deep combinational chains without feature decay.
+To resolve these challenges, we propose an \textbf{Interaction Dynamics} framework that models circuit behavior from the perspective of particle interaction physics. We first project heterogeneous circuit components, including standard cells, pins, and wire interconnects, into a unified point set of homogeneous physical elements. Within this set, every element pair with an electrical relationship evolves through a learnable interaction field. Specifically, a pairwise displacement operator takes the joint states and continuous physical impedances, such as wire resistance, parasitic capacitance, and driver loads, to compute unconstrained vector displacements in a continuous latent space. Concurrently, a localized sibling-competition mechanism dynamically arbitrates multi-fanin drive contention, preserving causal monotonicity along deep combinational chains without feature decay.
 
 Extensive evaluations on industrial circuit designs demonstrate that by directly simulating how fundamental elements interact and accumulate physical effects, our framework eliminates over-smoothing, preserves full relational physics, and achieves superior accuracy across diverse circuit metric prediction tasks.
 \end{abstract}
@@ -147,6 +147,8 @@ Furthermore, the choice of $K=32$ directly aligns with the 32-thread Warp size o
 
 \section{Experimental Results}
 
+Table~\ref{tab:master_benchmark} presents the unified Grand Master Benchmark results across the core physical and logical circuit tasks on industrial netlists, demonstrating our framework's superior accuracy and physical fidelity over prior art.
+
 \begin{table*}[t]
 \centering
 \caption{The Grand Master Benchmark Table across Seven VLSI Tracks on Industrial Circuits}
@@ -168,56 +170,6 @@ Furthermore, the choice of $K=32$ directly aligns with the 32-thread Warp size o
 \end{tabular}
 }
 \end{table*}
-
-\subsection{Experimental Setup}
-We implement our framework in PyTorch with native CUDA acceleration on an NVIDIA H100 PCIe GPU (80GB). Our dataset comprises 1,500 real circuit netlists synthesized under the Nangate45 open standard cell library using Yosys and fully placed and routed through the OpenROAD flow~\cite{openroad, circuitnet}. Full-chip parasitic extraction and signoff timing analysis are executed with OpenSTA to extract pin arrival times, transition slews, wire parasitics, cell arcs, total area, and state-dependent leakage reports. The dataset is split into 80\% training, 10\% validation, and 10\% unseen test sets.
-
-\subsection{Master Benchmark Evaluation}
-Table~\ref{tab:master_benchmark} presents comprehensive results across all seven tracks.
-
-\subsubsection{Track 1: Boolean Logic Verification}
-On 600 unseen test circuits from the DeepGate2 benchmark, our pairwise displacement dynamics achieves $r = 0.9966$, $R^2 = 0.9930$, and $\text{MAE} = 0.0103$. This drops the absolute error by $71.2\%$ compared to DeepGate2 ($0.0358$). Operating in an unconstrained 32-dimensional manifold enables direct simulation of Boolean probability propagation without heuristic AIG logic restructuring.
-
-\subsubsection{Track 2 \& 3: Pre-layout and Post-routing Timing}
-In pre-layout arrival time prediction (Track 2), our model achieves $r = 0.9541$, $R^2_{\text{macro}} = 0.8810$, and $\text{MAE} = 34.9\text{ps}$ under completely blind conditions (zero spatial coordinates, zero layout knowledge). When extended to post-routing circuits (Track 3), Kron reduction condenses 2,000 intermediate Steiner and via nodes into 4-dimensional continuous wire RC edges. Driven by these analog impedances, the MAE drops by $21.8\%$ to $\mathbf{27.3\text{ps}}$ ($r = 0.9514$), proving that physical parasitics act as strong natural regularizers.
-
-\subsubsection{Track 4: Net HPWL Wirelength Estimation}
-Predicting net wirelength before placement has traditionally been bounded by $r \approx 0.66$ (NetlistGNN) due to the stochasticity of placement annealing. By combining our 12-dimensional relation channels with a log-smoothed Huber loss ($\beta = 0.1$), we successfully tame the 254-fold heavy-tail dynamic range, achieving $r = \mathbf{0.8959}$, $R^2_{\text{real}} = \mathbf{0.7204}$, and an MAE of only $4.17\ \mu\text{m}$.
-
-\subsubsection{Track 5 \& 6: High-Frequency Slews and Cell Arcs}
-In Track 5, isolating transition time (Slew) into a specialized single-objective dynamics engine completely eliminates multi-task gradient conflict, dropping MAE to $\mathbf{4.02\text{ps}}$ ($r = 0.9142$). This represents a $44.2\%$ error reduction over the current state-of-the-art PreRoutGNN ($7.2\text{ps}$). 
-
-In Track 6, incorporating the $K=6$ sibling-pin micro-cluster captures the concurrent switching states of standard cells, boosting cell arc delay $R^2$ from $0.2065$ (standard GNN baseline) to $\mathbf{0.9207}$ ($r = 0.9630$), with an MAE of just $4.11\text{ps}$.
-
-\subsubsection{Track 7: Macro-PPA Hierarchical Meter Pyramid}
-For full-chip Total Area (Track 7A), the 32-way reduction pyramid achieves $r = 0.9754$, $R^2 = 0.9497$, and a MAPE of $7.75\%$ ($\text{MAE} = 95.9\ \mu\text{m}^2$). 
-
-For full-chip Total Leakage Power (Track 7B), individual standard cells exhibit up to $40\%$ state-dependent variance due to Boolean condition masking ($P(A, B)$). However, our hierarchical pyramid aggregates these localized fluctuations; under the Central Limit Theorem, positive and negative deviations naturally cancel out, allowing the root meter to achieve $r = \mathbf{0.9282}$, $R^2 = \mathbf{0.8400}$, and a MAPE of $\mathbf{9.58\%}$ ($\text{MAE} = 0.42\ \mu\text{W}$).
-
-\subsection{Ablation Studies}
-
-\subsubsection{Evolution Depth $T$ and Dirichlet Energy}
-We sweep dynamic evolution depth $T \in \{8, 16, 24, 32, 64, 96\}$ on pre-layout timing. As shown in Table~\ref{tab:ablation_depth}, the macro $R^2$ scales monotonically from $0.5249$ at $T=8$ to $0.8810$ at $T=64$. At $T=64$, our model maintains an empirical variance ratio ($\sigma_{\text{pred}} / \sigma_{\text{true}}$) of $\mathbf{0.983}$ and a path causality pass rate of $100\%$. In contrast, standard GCN and GAT collapse due to over-smoothing at $T \ge 16$.
-
-\begin{table}[h]
-\centering
-\caption{Ablation on Evolution Depth $T$ on Track 2}
-\label{tab:ablation_depth}
-\begin{tabular}{ccccc}
-\toprule
-\textbf{Depth $T$} & \textbf{Pearson $r$} & \textbf{$R^2_{\text{macro}}$} & \textbf{MAE (ps)} & \textbf{Variance Ratio} \\
-\midrule
-$T=8$  & 0.8393 & 0.5249 & 61.2 & 0.742 \\
-$T=16$ & 0.8845 & 0.6512 & 49.5 & 0.821 \\
-$T=32$ & 0.9169 & 0.7481 & 41.6 & 0.912 \\
-$T=64$ & \textbf{0.9541} & \textbf{0.8810} & \textbf{34.9} & \textbf{0.983} \\
-$T=96$ & 0.9520 & 0.8765 & 35.2 & 0.981 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsubsection{Pyramid Branching Factor $K$}
-We ablate the branching factor $K \in \{4, 8, 16, 32, \text{Flat}\}$ on Total Area prediction. Flat single-node pooling ($K=N$) suffers from extreme attention dilution, resulting in a MAPE of $20.75\%$ and $R^2 = 0.6498$. Setting $K=32$ achieves the optimal balance of depth and degree, reaching $R^2 = 0.9497$ and $\text{MAPE} = 7.75\%$.
 
 \section{Discussion: The Physics-Information Boundary}
 Our experimental findings reveal a fundamental theoretical boundary in ML for EDA: the mathematical dichotomy between \textbf{additive integral quantities} (Total Area, Leakage Power) and \textbf{extremum-search quantities} (Critical Path Max Delay, WNS). 
