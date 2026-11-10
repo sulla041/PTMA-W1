@@ -29,9 +29,11 @@
 \maketitle
 
 \begin{abstract}
+Integrated circuits naturally admit graph representations where components and interconnects map to nodes and edges, making graph modeling algorithms a prominent paradigm for circuit analysis and design automation. However, conventional graph learning frameworks treat circuit netlists as static topologies and rely on passive message-passing schemes. In reality, circuit features---ranging from transient signal transitions and interconnect parasitics to full-chip power and timing---do not exist as isolated static attributes; rather, they dynamically emerge from continuous physical interactions and causal wavefront propagation across deep logic cones. Existing approaches consequently struggle with severe over-smoothing in deep combinational paths, or resort to idealized Boolean abstractions that strip away physical fidelity. In this paper, we reveal a foundational insight: \textit{dynamic interactions define the embedding}. Instead of passively smoothing node states, circuit representations are inherently shaped by the continuous pairwise interaction fields governing signal propagation. Building upon this principle, we propose an end-to-end point-set graph dynamics framework that directly models physical interconnect impedances, unconstrained high-dimensional displacement fields, and GPU-native hierarchical meter networks. By unifying micro-scale cell dynamics, parasitic delays, and macro-scale chip metrics within a single continuous dynamical system, our framework establishes a principled, physics-isomorphic foundation for graph-based circuit modeling.
 \end{abstract}
 
 \begin{IEEEkeywords}
+Circuit representation learning, graph neural networks, physical design, timing prediction, interaction dynamics.
 \end{IEEEkeywords}
 
 \section{Introduction}
