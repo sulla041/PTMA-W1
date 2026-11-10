@@ -147,25 +147,26 @@ Furthermore, the choice of $K=32$ directly aligns with the 32-thread Warp size o
 
 \section{Experimental Results}
 
-Table~\ref{tab:master_benchmark} presents the unified Grand Master Benchmark results across the core physical and logical circuit tasks on industrial netlists, demonstrating our framework's superior accuracy and physical fidelity over prior art.
+Table~\ref{tab:master_benchmark} presents the unified Grand Master Benchmark results across the nine core physical and logical circuit tasks, ordered strictly by physical cause-and-effect hierarchy and prediction difficulty, demonstrating our framework's superior accuracy and physical fidelity over prior art.
 
 \begin{table*}[t]
 \centering
-\caption{The Grand Master Benchmark Table across Seven VLSI Tracks on Industrial Circuits}
+\caption{The Grand Master Benchmark Table across Nine Core Physical and Logical Circuit Tasks}
 \label{tab:master_benchmark}
 \resizebox{\textwidth}{!}{
-\begin{tabular}{lcccccc}
+\begin{tabular}{lllccccc}
 \toprule
-\textbf{Track \& Research Target} & \textbf{Dataset / Scope} & \textbf{SOTA Baseline} & \textbf{Ours ($r$)} & \textbf{Ours ($R^2$)} & \textbf{Ours (MAE / MAPE)} & \textbf{Key Physical Breakthrough} \\
+\textbf{Task Category} & \textbf{Benchmark Task Name} & \textbf{Target Metric \& Unit} & \textbf{SOTA Baseline} & \textbf{Ours ($r$ $\uparrow$)} & \textbf{Ours ($R^2$ $\uparrow$)} & \textbf{Ours (MAE $\downarrow$)} & \textbf{Ours (MAPE $\downarrow$)} \\
 \midrule
-\textbf{Track 1: Boolean Logic} & 600 unseen AIGs & DeepGate2 ($r \approx 0.94$) & \textbf{0.9966} & \textbf{0.9930} & $\text{MAE} = 0.0103$ & 71.2\% error reduction over DeepGate2 \\
-\textbf{Track 2: Pre-layout Timing (D1)} & 1,500 designs (Blind) & GNN Timing ($r \approx 0.75$) & \textbf{0.9541} & \textbf{0.8810} & $34.9\text{ps}$ (10.48\%) & Pure forward arrow-of-time; zero level-leakage \\
-\textbf{Track 3: Post-route RC Timing (D2)} & 771 routed circuits & Heterogeneous ($r=0.662$) & \textbf{0.9514} & \textbf{0.8681} & $\mathbf{27.3\text{ps}}$ (10.43\%) & Kron reduction eliminates 2000 pseudo-nodes \\
-\textbf{Track 4: Net HPWL Wirelength} & 496 chips, 10k nets & NetlistGNN ($r=0.66$) & \textbf{0.8959} & \textbf{0.7204} & $\mathbf{4.17\ \mu\text{m}}$ & Smooth log-Huber loss tames 254x heavy-tail span \\
-\textbf{Track 5: Signal Slew Rate (D3)} & 771 routed circuits & PreRoutGNN ($7.2\text{ps}$) & \textbf{0.9142} & \textbf{0.7566} & $\mathbf{4.02\text{ps}}$ (17.17\%) & 44.2\% error reduction over AAAI 2024 SOTA \\
-\textbf{Track 6: Cell Arc Delay (D3)} & 500 industrial circuits & Standard GNN ($R^2=0.20$) & \textbf{0.9630} & \textbf{0.9207} & $\mathbf{4.11\text{ps}}$ & $K=6$ sibling-pin micro-clusters resolve bias \\
-\textbf{Track 7A: Global Area (P2)} & 771 full chips & Global Mean/Max ($R^2<0.70$) & \textbf{0.9754} & \textbf{0.9497} & $95.9\ \mu\text{m}^2$ (7.75\%) & Hierarchical 32-meter pyramid eliminates dilation \\
-\textbf{Track 7B: Global Leakage (P2)} & 771 full chips & Static Lookup ($r \approx 0.80$) & \textbf{0.9282} & \textbf{0.8400} & $0.42\ \mu\text{W}$ (9.58\%) & Central Limit theorem tames state condition entropy \\
+\textbf{Local Static (0-Hop)} & Local Cell Area (A1) & Gate Physical Area ($\mu\text{m}^2$) & Lookup ($R^2 \approx 0.98$) & \textbf{0.9994} & \textbf{0.9983} & $0.0108$ & \textbf{0.12\%} \\
+\textbf{Boolean Logic (Multi-Hop)} & Boolean Signal Prob (S1) & Logical 1 Prob $P(1) \in [0, 1]$ & DeepGate2 ($r \approx 0.94$) & \textbf{0.9966} & \textbf{0.9930} & $0.0103$ & \textbf{2.14\%} \\
+\textbf{Boolean Logic (Multi-Hop)} & Boolean Toggle Prob (S1) & Toggle Prob $P(\text{toggle}) \in [0, 1]$ & DeepGate2 ($r \approx 0.93$) & \textbf{0.9958} & \textbf{0.9915} & $0.0112$ & \textbf{2.35\%} \\
+\textbf{Causal Timing (Deep Multi-Hop)} & Pre-layout Timing (D1) & Pin Arrival Time ($\text{ps}$) & GNN Timing ($r \approx 0.75$) & \textbf{0.9541} & \textbf{0.8810} & $34.9\text{ps}$ & \textbf{10.48\%} \\
+\textbf{Causal Timing (Parasitic RC)} & Post-route RC Timing (D2) & Arrival Time with Wire RC ($\text{ps}$) & Heterogeneous ($r=0.662$) & \textbf{0.9514} & \textbf{0.8681} & $\mathbf{27.3\text{ps}}$ & \textbf{10.43\%} \\
+\textbf{Micro Transient Physics} & Cell Arc Delay (D3) & Std-Cell Arc Delay ($\text{ps}$) & Standard GNN ($R^2=0.20$) & \textbf{0.9630} & \textbf{0.9207} & $\mathbf{4.11\text{ps}}$ & \textbf{12.00\%} \\
+\textbf{Spatial Layout Geometry} & Pre-layout Wirelength (HPWL) & Net Half-Perimeter Wirelength ($\mu\text{m}$) & NetlistGNN ($r=0.66$) & \textbf{0.8959} & \textbf{0.7204} & $\mathbf{4.17\ \mu\text{m}}$ & \textbf{47.12\%} \\
+\textbf{Macro PPA (Hierarchical Meter)} & Global Chip Area (P2) & Total Cell Physical Area ($\mu\text{m}^2$) & Global Mean ($R^2<0.70$) & \textbf{0.9754} & \textbf{0.9497} & $95.94\ \mu\text{m}^2$ & \textbf{7.75\%} \\
+\textbf{Macro PPA (Hierarchical Meter)} & Global Leakage Power (P2) & Total Static Leakage Power ($\mu\text{W}$) & Static Lookup ($r \approx 0.80$) & \textbf{0.9282} & \textbf{0.8400} & $0.42\ \mu\text{W}$ & \textbf{9.58\%} \\
 \bottomrule
 \end{tabular}
 }
