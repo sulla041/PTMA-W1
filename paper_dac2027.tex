@@ -31,10 +31,6 @@
 \section*{Abstract}
 Integrated circuits are naturally abstracted as graphs, making graph modeling a prominent paradigm for circuit analysis and modeling. However, conventional graph neural networks fundamentally rely on message passing that suffers from over-smoothing across deep multi-hop paths, while compressing multi-dimensional interconnections into scalar weights causes severe loss of physical parasitics and load attributes. To address these challenges, we propose an end-to-end point-set graph dynamics framework that maps the circuit graph into a point set and learns embeddings by training pairwise interaction patterns. Trainable pairwise interactions eliminate over-smoothing while enabling complete multi-dimensional relation feature vectors to participate directly in the interaction dynamics. Downstream tasks are performed by reading out node embeddings and pairwise interactions. Furthermore, inserted virtual nodes unify whole-graph metric extraction into the same embedding readout formulation. Extensive experiments across diverse downstream tasks on open-source benchmarks (CircuitNet and DeepGate) validate the effectiveness of our proposed methodology.
 
-\begin{IEEEkeywords}
-Circuit representation learning, graph neural networks, pairwise interaction dynamics, over-smoothing, parasitic modeling, virtual node readout.
-\end{IEEEkeywords}
-
 \section{Introduction}
 
 \section{Related Work}
