@@ -22,177 +22,29 @@
 
 \begin{document}
 
-\title{Dynamic Interactions Define the Set: End-to-End Point-Set Graph Modeling for Circuit Feature Prediction}
+\title{Dynamic Interactions Define the Embedding: End-to-End Point-Set Graph Modeling for Circuit Feature Prediction}
 
 \author{\IEEEauthorblockN{Anonymous Author(s)}}
 
 \maketitle
 
 \begin{abstract}
-In electronic design automation, modeling circuits with neural networks is critical for fast and accurate circuit metric prediction. While circuits are naturally represented as graphs, conventional paradigms face fundamental dilemmas. Node and edge features are difficult to align into a unified modality, which forces existing models to discard edge parasitics or compress them into scalars. Furthermore, deep aggregation along multi-hop logic chains induces severe over-smoothing and representation collapse.
-
-To resolve these challenges, we propose an \textbf{Interaction Dynamics} framework that models circuit behavior from the perspective of particle interaction physics. We first project heterogeneous circuit components, including standard cells, pins, and wire interconnects, into a unified point set of homogeneous physical elements. Within this set, every element pair with an electrical relationship evolves through a learnable interaction field. Specifically, a pairwise displacement operator takes the joint states and continuous physical impedances, such as wire resistance, parasitic capacitance, and driver loads, to compute unconstrained vector displacements in a continuous latent space. Concurrently, a localized sibling-competition mechanism dynamically arbitrates multi-fanin drive contention, preserving causal monotonicity along deep combinational chains without feature decay.
-
-Extensive evaluations on industrial circuit designs demonstrate that by directly simulating how fundamental elements interact and accumulate physical effects, our framework eliminates over-smoothing, preserves full relational physics, and achieves superior accuracy across diverse circuit metric prediction tasks.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Electronic Design Automation, Static Timing Analysis, Deep Learning for CAD, Circuit Representation Learning, Hierarchical Graph Reduction, Physical Design PPA.
 \end{IEEEkeywords}
 
 \section{Introduction}
-Accelerating the design convergence of modern Very Large Scale Integrated (VLSI) circuits requires rapid and high-fidelity evaluation of Power, Performance, and Area (PPA) across logic synthesis, floorplanning, placement, and routing stages~\cite{timingpredict, net2}. Traditional Static Timing Analysis (STA) and full-chip parasitic extraction tools (e.g., OpenSTA, PrimeTime) provide ground-truth signoff accuracy but are computationally prohibitive inside inner iterative optimization loops. Consequently, machine learning (ML) models—specifically Graph Neural Networks (GNNs)—have emerged as attractive proxies~\cite{deepgate2, preroutgnn}.
-
-However, despite substantial research, applying standard deep learning architectures to real-world industrial netlists exposes three fundamental theoretical and physical dilemmas:
-
-\begin{enumerate}
-    \item \textbf{The Degradation of Physical Interconnects}: Conventional models (e.g., GCN, GAT, DeepGate2~\cite{deepgate2}) treat the circuit as a node-centric graph where the adjacency matrix $A$ merely encodes binary connectivity. In modern nanoscale nodes, interconnect wire delay and parasitic RC contribute over $50\%$ of path delays. Treating metal routes as passive topological edges discards vital physical interactions.
-    \item \textbf{Over-Smoothing in Ultra-Deep Logic Cones}: Classical MPNNs rely on Laplacian feature smoothing ($h_i^{(l+1)} = \sigma(\sum W h_j)$). In sequential and deep combinational circuits with logic depths exceeding 50 to 100 stages, stacked message passing exponentially dissipates Dirichlet energy, causing features to collapse to uniform representations (over-smoothing) and bottlenecking gradients (over-squashing).
-    \item \textbf{The Degree Explosion in Macro-PPA Pooling}: Graph-level PPA prediction (e.g., Total Area, Total Leakage Power) has traditionally relied on naive mean/sum pooling or single global virtual nodes. The former destroys localized topology, while the latter suffers from an $O(N)$ node degree explosion, diluting attention weights ($\frac{1}{N} \to 0$) and causing optimization stagnation.
-\end{enumerate}
-
-To conquer these challenges, we introduce a physics-isomorphic interaction dynamics architecture centered on \textbf{three foundational pillars}:
-\begin{itemize}
-    \item \textbf{Pillar 1: Native Relation-Centric Edge Dynamics}: We elevate circuit interconnects from discrete edge types into multi-dimensional continuous impedance channels (wire resistance $R$, capacitance $C$, via count, and driver fan-out load). Physical parasitics act as primary first-class citizens in generating continuous vector fields.
-    \item \textbf{Pillar 2: Graph-as-Set via Pairwise Displacement Dynamics}: We completely discard passive feature passing. Instead, the netlist is treated as a set of interacting particles where embeddings evolve through unconstrained, trainable pairwise displacement fields ($\Delta s_{ji} = \text{MLP}([s_j, s_i, s_j - s_i, r_{ji}])$). By integrating along Eulerian manifolds without saturating squashing functions (e.g., $\tanh$), our architecture scales to $T \ge 64$ layers with an empirical variance retention ratio of $0.983$ and $r = 0.9541$.
-    \item \textbf{Pillar 3: Hierarchical Meter Networks ($K=32$ Pyramid)}: We reformulate global graph aggregation as a trainable, depth-balanced embedding problem. Using a 32-way reduction pyramid, each meter maintains an $O(1)$ in-degree ($\le 32$) with logarithmic reduction depth $O(\log_{32} N)$, perfectly matching GPU warp SIMT parallelism.
-\end{itemize}
-
-The main contributions of this paper are summarized as follows:
-\begin{itemize}
-    \item We break away from the conventional node-centric GNN paradigm by formulating interconnect parasitics as continuous physical impedance channels within a native relation-centric framework.
-    \item We re-conceptualize circuit representation as particle-set dynamics, unlocking stable deep feature propagation ($T \ge 64$) along Eulerian manifolds while preserving gradient vitality across thousands of logic gates.
-    \item We develop a 32-way hierarchical meter reduction network that completely resolves the degree explosion of graph pooling, matching the GPU SIMT execution model.
-    \item We demonstrate comprehensive SOTA accuracy across seven VLSI benchmark tracks on 1,500 real industrial designs, establishing new records from micro-scale cell arcs to chip-level PPA.
-\end{itemize}
 
 \section{Related Work}
 
-\subsection{Circuit Representation Learning}
-Early endeavors in circuit representation learning focused on abstract Boolean logic networks. Shi et al. introduced DeepGate~\cite{deepgate2022}, which learned structural and functional embeddings on And-Inverter Graphs (AIGs) by supervising random simulation probabilities. Pan et al. subsequent developed DeepGate2~\cite{deepgate2}, utilizing one-round message passing and truth-table difference supervision to capture logic functionality. To tackle scalability on multi-million gate netlists, DeepGate3~\cite{deepgate3} integrated cross-attention over hierarchical blocks, and Gamora~\cite{gamora} extended graph reasoning to large-scale equivalence checking. CircuitFlow~\cite{circuitflow} recently formulated leaf self-attention over transitive fan-in cones. Nevertheless, all these models operate strictly on idealized Boolean graphs, completely abstracting away continuous physical impedances ($R, C$), transistor drive sizing, and layout parasitics.
-
-\subsection{Deep GNNs and Directed Graph Over-Smoothing}
-Standard Graph Neural Networks—such as Graph Convolutional Networks (GCN)~\cite{kipf2017gcn} and Graph Attention Networks (GAT)~\cite{velickovic2018gat}—rely on iterative message aggregation over undirected or symmetrically normalized Laplacians. In ultra-deep directed acyclic graphs (such as industrial netlists where combinational paths exceed 100 logic stages), conventional MPNNs suffer from catastrophic over-smoothing and over-squashing~\cite{rusch2023survey}. While deep architectures such as GCNII~\cite{gcnii} utilize initial residual connections and identity mapping to preserve Dirichlet energy, they assume undirected topologies and fail to capture asymmetric causal wavefront propagation. Recent directed graph frameworks such as DirGNN~\cite{dirgnn} separate in-degree and out-degree aggregations, yet they treat edges as passive scalar channels and cannot accommodate multi-dimensional continuous physical impedances.
-
-\subsection{Machine Learning for Timing, Wirelength, and Macro-PPA}
-In physical design automation, machine learning has been increasingly explored to replace time-consuming signoff engines. TimingPredict~\cite{timingpredict} pioneered heterogeneous GNN modeling for post-placement timing prediction, but heavily relied on layout coordinates $(\Delta x, \Delta y)$ and lookup tables (LUTs). PreRoutGNN~\cite{preroutgnn} advanced pre-routing Slack and Slew estimation by enforcing topological sorting sequences; however, its reliance on discrete logic levels introduces stage leakage, while multi-task joint optimization degrades transition slew fidelity. For interconnect modeling, Net2~\cite{net2} and NetlistGNN~\cite{netlistgnn} estimated pre-placement half-perimeter wirelength (HPWL), yet suffered from heavy-tailed error distributions across multi-pin nets. On the macro power and PPA front, GRANNITE~\cite{grannite} and PowerNet~\cite{powernet} predicted dynamic switching activity and IR drop through CNN grids, but failed to address state-dependent leakage variations or full-chip area aggregation. Our work bridges these disparate domains through a unified, physics-grounded interaction dynamics framework.
-
 \section{Methodology}
-
-\subsection{Circuit Graph Abstraction}
-A synthesized and placed circuit netlist is formulated as a directed heterogeneous causal graph $\mathcal{G} = (\mathcal{V}, \mathcal{E}, \mathcal{R})$. The node set $\mathcal{V} = \mathcal{V}_{\text{cell}} \cup \mathcal{V}_{\text{pin}} \cup \mathcal{V}_{\text{port}}$ encapsulates standard cells, pins, and primary I/O ports. Unlike traditional homogeneously flattened graphs, each node $u \in \mathcal{V}$ possesses a 24-dimensional compact feature vector $\mathbf{x}_u$ composed of six balanced channels:
-\begin{equation}
-\mathbf{x}_u = \big[ \mathbf{e}_{\text{kind}}(u) \,\|\, \mathbf{e}_{\text{base}}(u) \,\|\, \mathbf{e}_{\text{drive}}(u) \,\|\, \mathbf{e}_{\text{pin}}(u) \,\|\, \mathbf{e}_{\text{out}}(u) \,\|\, \mathbf{e}_{\text{in}}(u) \big]
-\end{equation}
-where $\mathbf{e}_{\text{kind}} \in \mathbb{R}^4$, $\mathbf{e}_{\text{base}} \in \mathbb{R}^4$, and $\mathbf{e}_{\text{pin}} \in \mathbb{R}^4$ are learnable integer embeddings representing cell functional families, base gate types, and pin port identifiers. The continuous channels $\mathbf{e}_{\text{drive}}$, $\mathbf{e}_{\text{out}}$, and $\mathbf{e}_{\text{in}}$ (4-dim each) project transistor drive strength, $\log(1 + d_{\text{out}})$, and $\log(1 + d_{\text{in}})$.
-
-\subsection{Native Relation-Centric Edge Dynamics}
-In physical silicon, signals do not flow through abstract mathematical edges; rather, an electromagnetic wave propagates through a lossy transmission line loaded with capacitive sinks. To model this, every directed edge $e = (u, v) \in \mathcal{E}$ is assigned a 12-dimensional relation impedance vector $\mathbf{r}_{uv}$:
-\begin{equation}
-\mathbf{r}_{uv} = \big[ \mathbf{e}_{\text{type}}(e_{uv}) \,\|\, \text{MLP}_{\text{imp}}\big( [\log(1 + d_{\text{out}}(u)), \log(1 + d_{\text{in}}(v)), R_{uv}, C_{uv}] \big) \big]
-\end{equation}
-where $\mathbf{e}_{\text{type}} \in \mathbb{R}^6$ represents the discrete edge category (e.g., driver-to-net, net-to-sink, intra-cell arc, hierarchical meter connection). The analog impedance slice encodes source driver load $C_{\text{load}}$ (via $d_{\text{out}}(u)$), destination fan-in competition ($d_{\text{in}}(v)$), lumped wire resistance $R_{uv}$, and wire capacitance $C_{uv}$.
-
-\subsection{Pairwise Displacement Dynamics over Particle Sets}
-Classical message passing models compute $h_i^{(l+1)} = \sigma(\sum_{j \in \mathcal{N}(i)} W h_j^{(l)})$, which inevitably smooths feature variations across successive layers. We abandon this paradigm. We treat the netlist embeddings as a collection of particles in a continuous latent manifold $\mathbb{R}^D$ ($D=32$), governed by pairwise displacement vector fields:
-
-\begin{definition}[Pairwise Work and Displacement Field]
-Given source state $s_j^{(t)}$ and destination state $s_i^{(t)}$, the pairwise displacement vector $\Delta s_{ji}^{(t)} \in \mathbb{R}^D$ is generated by a non-linear interaction operator:
-\begin{equation}
-\Delta s_{ji}^{(t)} = \phi_{\text{disp}}\Big( \big[ s_j^{(t)}, s_i^{(t)}, s_j^{(t)} - s_i^{(t)}, \|s_j^{(t)} - s_i^{(t)}\|_2, \mathbf{r}_{ji} \big] \Big)
-\end{equation}
-where $\phi_{\text{disp}}: \mathbb{R}^{2D + 1 + 12} \to \mathbb{R}^D$ is a multi-layer perceptron with GELU activations.
-\end{definition}
-
-\begin{definition}[Co-Fanin Sibling Competition]
-In Static Timing Analysis, the arrival time at a multi-input gate is governed by the worst-case path ($\max_{j \in \text{fanin}} \tau_j$). To mirror this physical max-competition differentiably, we compute localized competition coefficients:
-\begin{equation}
-\alpha_{ji}^{(t)} = \frac{\exp\big( \psi(s_j^{(t)}, s_i^{(t)}, \mathbf{r}_{ji}) / \sqrt{D} \big)}{\sum_{k \in \mathcal{N}_{\text{in}}(i)} \exp\big( \psi(s_k^{(t)}, s_i^{(t)}, \mathbf{r}_{ki}) / \sqrt{D} \big)}
-\end{equation}
-where $\psi$ computes scalar affinity logits.
-\end{definition}
-
-The particle state evolves along an Eulerian manifold according to:
-\begin{equation}
-s_i^{(t+1)} = s_i^{(t)} + \sum_{j \in \mathcal{N}_{\text{in}}(i)} \alpha_{ji}^{(t)} \Delta s_{ji}^{(t)}
-\end{equation}
-Crucially, the displacement $\Delta s_{ji}^{(t)}$ is completely unconstrained by bounded squashing functions such as $\tanh$. This ensures that as signal wavefronts advance across hundreds of logic stages, the displacement vectors additively accumulate without saturating the latent space.
-
-\subsection{Micro-scale Physics: Kron Reduction and Sibling Clusters}
-To handle post-routing parasitics without introducing thousands of Steiner point pseudo-nodes, we apply physical network reduction (Kron reduction) to collapse intermediate wire fragments into 4-dimensional continuous edge RC attributes ($R_{\text{wire}}, C_{\text{wire}}, N_{\text{via}}, L_{\text{wire}}$).
-
-For intra-cell delay (Cell Arc Delay), isolated pairwise modeling fails because logic gate switching delays are strongly modulated by the bias state of concurrent inputs. To capture dynamic transistor on-resistance $R_{\text{on}}$, we construct a localized micro-cluster $\mathcal{S}_{\text{sibling}}(u)$ encompassing all $K=6$ sibling pins belonging to the same standard cell master, injecting shared biasing states into the cell arc readout head:
-\begin{equation}
-\widehat{\tau}_{\text{arc}}(u, v) = \text{MLP}_{\text{arc}}\Big( \big[ s_u^{(T)}, s_v^{(T)}, \mathbf{r}_{uv}, \sum_{k \in \mathcal{S}_{\text{sibling}}(u)} s_k^{(T)} \big] \Big)
-\end{equation}
-
-\subsection{Hierarchical Meter Networks for Full-Chip PPA}
-Global chip-level metrics such as Total Area ($A_{\text{total}}$) and Total Leakage Power ($P_{\text{leak}}$) are additive physical integrals over all standard cells. Conventional models compute these by flat global pooling: $\widehat{Y} = \text{Readout}(\sum_{i=1}^N h_i)$ or connecting all nodes to a single virtual sink. The former lacks spatial awareness, while the latter creates an $O(N)$ degree bottleneck where individual node contributions vanish as $1/N$.
-
-We solve this via the \textbf{Hierarchical Meter Network} ($K=32$ reduction pyramid):
-\begin{equation}
-\mathcal{V}_{\text{graph}} = \mathcal{V}_{\text{cells}} \cup \mathcal{V}_{\text{meter}}^{L1} \cup \{v_{\text{root}}\}
-\end{equation}
-Every cell $i \in \{0, \dots, N-1\}$ connects to an L1 meter $M_k^{L1}$ with $k = \lfloor i / 32 \rfloor$ via edge type 14. All L1 meters subsequently connect to the single root meter $v_{\text{root}}$ via edge type 15.
-
-\begin{proposition}[Logarithmic Bounded In-Degree]
-Under a branching factor $K=32$, the in-degree of any node in the hierarchical reduction network satisfies $\deg_{\text{in}}(v) \le 32 = O(1)$, and the maximum path length from any cell to $v_{\text{root}}$ is $2 = O(\log_{32} N)$ for circuits up to $32^2 = 1,024$ cells ($3$ for up to $32,768$ cells).
-\end{proposition}
-
-The root meter reads out global PPA targets through an unbiased linear projection:
-\begin{equation}
-\widehat{Y}_{\text{PPA}} = \mathbf{w}_{\text{PPA}}^T s_{\text{root}}^{(T)} + b_{\text{PPA}}
-\end{equation}
-Furthermore, the choice of $K=32$ directly aligns with the 32-thread Warp size of NVIDIA GPU architectures, completely eliminating thread divergence during parallel SIMT reduction.
 
 \section{Experimental Results}
 
-Table~\ref{tab:master_benchmark} presents the unified Grand Master Benchmark results across the nine core physical and logical circuit tasks, ordered strictly by physical cause-and-effect hierarchy and prediction difficulty, demonstrating our framework's superior accuracy and physical fidelity over prior art.
-
-\begin{table*}[t]
-\centering
-\caption{The Grand Master Benchmark Table across Nine Core Physical and Logical Circuit Tasks}
-\label{tab:master_benchmark}
-\resizebox{\textwidth}{!}{
-\begin{tabular}{lllccccc}
-\toprule
-\textbf{Task Category} & \textbf{Benchmark Task Name} & \textbf{Target Metric \& Unit} & \textbf{SOTA Baseline} & \textbf{Ours ($r$ $\uparrow$)} & \textbf{Ours ($R^2$ $\uparrow$)} & \textbf{Ours (MAE $\downarrow$)} & \textbf{Ours (MAPE $\downarrow$)} \\
-\midrule
-\textbf{Local Static (0-Hop)} & Local Cell Area (A1) & Gate Physical Area ($\mu\text{m}^2$) & Lookup ($R^2 \approx 0.98$) & \textbf{0.9994} & \textbf{0.9983} & $0.0108$ & \textbf{0.12\%} \\
-\textbf{Boolean Logic (Multi-Hop)} & Boolean Signal Prob (S1) & Logical 1 Prob $P(1) \in [0, 1]$ & DeepGate2 ($r \approx 0.94$) & \textbf{0.9966} & \textbf{0.9930} & $0.0103$ & \textbf{2.14\%} \\
-\textbf{Boolean Logic (Multi-Hop)} & Boolean Toggle Prob (S1) & Toggle Prob $P(\text{toggle}) \in [0, 1]$ & DeepGate2 ($r \approx 0.93$) & \textbf{0.9958} & \textbf{0.9915} & $0.0112$ & \textbf{2.35\%} \\
-\textbf{Causal Timing (Deep Multi-Hop)} & Pre-layout Timing (D1) & Pin Arrival Time ($\text{ps}$) & GNN Timing ($r \approx 0.75$) & \textbf{0.9541} & \textbf{0.8810} & $34.9\text{ps}$ & \textbf{10.48\%} \\
-\textbf{Causal Timing (Parasitic RC)} & Post-route RC Timing (D2) & Arrival Time with Wire RC ($\text{ps}$) & Heterogeneous ($r=0.662$) & \textbf{0.9514} & \textbf{0.8681} & $\mathbf{27.3\text{ps}}$ & \textbf{10.43\%} \\
-\textbf{Micro Transient Physics} & Cell Arc Delay (D3) & Std-Cell Arc Delay ($\text{ps}$) & Standard GNN ($R^2=0.20$) & \textbf{0.9630} & \textbf{0.9207} & $\mathbf{4.11\text{ps}}$ & \textbf{12.00\%} \\
-\textbf{Spatial Layout Geometry} & Pre-layout Wirelength (HPWL) & Net Half-Perimeter Wirelength ($\mu\text{m}$) & NetlistGNN ($r=0.66$) & \textbf{0.8959} & \textbf{0.7204} & $\mathbf{4.17\ \mu\text{m}}$ & \textbf{47.12\%} \\
-\textbf{Macro PPA (Hierarchical Meter)} & Global Chip Area (P2) & Total Cell Physical Area ($\mu\text{m}^2$) & Global Mean ($R^2<0.70$) & \textbf{0.9754} & \textbf{0.9497} & $95.94\ \mu\text{m}^2$ & \textbf{7.75\%} \\
-\textbf{Macro PPA (Hierarchical Meter)} & Global Leakage Power (P2) & Total Static Leakage Power ($\mu\text{W}$) & Static Lookup ($r \approx 0.80$) & \textbf{0.9282} & \textbf{0.8400} & $0.42\ \mu\text{W}$ & \textbf{9.58\%} \\
-\bottomrule
-\end{tabular}
-}
-\end{table*}
-
-\section{Discussion: The Physics-Information Boundary}
-Our experimental findings reveal a fundamental theoretical boundary in ML for EDA: the mathematical dichotomy between \textbf{additive integral quantities} (Total Area, Leakage Power) and \textbf{extremum-search quantities} (Critical Path Max Delay, WNS). 
-
-Additive quantities provide dense, non-zero gradient backpropagation across all $N$ nodes simultaneously:
-\begin{equation}
-\frac{\partial \sum_{i=1}^N Y_i}{\partial Y_i} = 1, \quad \forall i \in \{1, \dots, N\}
-\end{equation}
-Every cell continuously guides the convergence of the hierarchical meters, enabling $R^2 \ge 0.95$. 
-
-Conversely, attempting end-to-end scalar regression directly on chip-level maximum delay encounters an extreme gradient sparsity problem:
-\begin{equation}
-\frac{\partial \max_{i} \tau_i}{\partial \tau_i} = 
-\begin{cases} 
-1, & \text{if } i = \text{argmax}_k \tau_k \\ 
-0, & \forall i \neq \text{argmax}_k \tau_k 
-\end{cases}
-\end{equation}
-Because only one critical endpoint contributes non-zero gradients (a $99.97\%$ sparsity in a 3,000-pin circuit), training collapses into saddle points ($r \approx 0.28$). Thus, end-to-end scalar prediction of chip-level maximum delay is mathematically ill-posed; the correct, physically grounded route is to perform dense pin-level wavefront regression across all endpoints, followed by post-hoc topological maximization.
+\section{Discussion}
 
 \section{Conclusion}
-We presented a physics-isomorphic circuit learning paradigm that replaces classical message passing with pairwise displacement dynamics and hierarchical meter networks. By elevating wires to continuous impedance channels, evolving embeddings over unconstrained manifolds, and structuring graph reduction into warp-aligned pyramids, our framework achieves unprecedented accuracy across seven industrial benchmark tracks, bridging the gap between deep learning and nanoscale chip physics.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
