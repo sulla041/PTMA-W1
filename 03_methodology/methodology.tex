@@ -35,26 +35,38 @@ By reformulating the circuit graph as a point set characterized by latent struct
 \subsection{Trainable Pairwise Interaction Dynamics Field}
 \label{sec:method_dynamics}
 
-To compute the structural displacement $\boldsymbol{\delta}_i$, we construct an end-to-end Trainable Interaction Dynamics Field (Figure~\ref{fig:overall_framework}, Stage 3). Rather than relying on passive neighborhood diffusion, the trajectory of each particle is actively driven by directional pairwise interactions.
+To compute the structural displacement $\boldsymbol{\delta}_i$, we construct an end-to-end Trainable Interaction Dynamics Field (Figure~\ref{fig:overall_framework}, Stage 3). Rather than relying on passive neighborhood diffusion, the trajectory of each particle is actively driven by directional pairwise interactions and competitive acquisition coefficients, as detailed in Figure~\ref{fig:pairwise_dynamics}.
 
-At each interaction layer $l \in \{0, 1, \dots, L-1\}$, consider a directed connection $(j, i) \in \mathcal{E}$, where driver $j$ interacts with sink $i$. We construct a compact pairwise geometric-relational basis concatenating the terminal coordinates, their relative displacement differential, their Euclidean separation, and the continuous relation embedding:
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/method02.pdf}
+  \caption{Microscopic architecture of the trainable pairwise interaction dynamics field. For each directed branch, pairwise algebraic features $\mathbf{p}_{ji} = \Phi(\mathbf{s}_j, \mathbf{s}_i)$ and continuous physical relation embeddings $\mathbf{r}_{ji}$ enter the joint dynamics MLP to calculate candidate velocity displacements and competitive priority logits. Localized Softmax across all incoming driving branches arbitrates competitive acquisition coefficients $\alpha_{ji}$, aggregating the net latent offset $\Delta \mathbf{s}_i$ to update particle state $\mathbf{s}_i \to \mathbf{s}_i'$.}
+  \label{fig:pairwise_dynamics}
+\end{figure}
+
+At each interaction layer $l \in \{0, 1, \dots, L-1\}$, consider a directed connection $(j, i) \in \mathcal{E}$, where driver $j$ interacts with sink $i$. We first extract pairwise algebraic divergence features through an operator $\Phi$:
 \begin{equation}
-    \Phi_{\text{evol}}\!\left(\mathbf{s}_j^{(l)}, \mathbf{s}_i^{(l)}, \mathbf{r}_{ji}\right) = \Big[\, \mathbf{s}_j^{(l)} \;\|\; \mathbf{s}_i^{(l)} \;\|\; \big(\mathbf{s}_j^{(l)} - \mathbf{s}_i^{(l)}\big) \;\|\; \big\|\mathbf{s}_j^{(l)} - \mathbf{s}_i^{(l)}\big\|_2 \;\|\; \mathbf{r}_{ji} \,\Big] \in \mathbb{R}^{3d + 1 + d_r},
+    \mathbf{p}_{ji}^{(l)} = \Phi\left(\mathbf{s}_j^{(l)}, \mathbf{s}_i^{(l)}\right) = \Big[\, \big(\mathbf{s}_j^{(l)} - \mathbf{s}_i^{(l)}\big) \;\|\; \big\|\mathbf{s}_j^{(l)} - \mathbf{s}_i^{(l)}\big\|_2 \,\Big] \in \mathbb{R}^{d + 1},
+    \label{eq:algebraic_operator}
+\end{equation}
+which explicitly evaluates the relative displacement vector and Euclidean separation between particles in the latent space. Combining the particle coordinates, algebraic divergence, and continuous relation embeddings yields a comprehensive geometric-relational interaction context:
+\begin{equation}
+    \Phi_{\text{evol}}\!\left(\mathbf{s}_j^{(l)}, \mathbf{s}_i^{(l)}, \mathbf{r}_{ji}\right) = \Big[\, \mathbf{s}_j^{(l)} \;\|\; \mathbf{s}_i^{(l)} \;\|\; \mathbf{p}_{ji}^{(l)} \;\|\; \mathbf{r}_{ji} \,\Big] \in \mathbb{R}^{3d + 1 + d_r},
     \label{eq:pairwise_basis}
 \end{equation}
-where $\|$ denotes vector concatenation. A pairwise dynamics operator $\Psi: \mathbb{R}^{3d + 1 + d_r} \to \mathbb{R}^d$ then maps this basis into an all-directional velocity displacement vector:
+where $\|$ denotes vector concatenation. A trainable dynamics operator $\Psi: \mathbb{R}^{3d + 1 + d_r} \to \mathbb{R}^d$ maps this context into an all-directional velocity displacement vector:
 \begin{equation}
     \mathbf{m}_{ji}^{(l)} = \Psi\!\left(\Phi_{\text{evol}}\!\left(\mathbf{s}_j^{(l)}, \mathbf{s}_i^{(l)}, \mathbf{r}_{ji}\right)\right) \in \mathbb{R}^d.
     \label{eq:pairwise_interaction}
 \end{equation}
 Crucially, the relation vector $\mathbf{r}_{ji}$ participates directly as a continuous physical condition within $\Phi_{\text{evol}}$, allowing attributes such as load capacitance and wire resistance to modulate both the orientation and magnitude of $\mathbf{m}_{ji}^{(l)}$ without scalar compression.
 
-In digital circuits, a sink pin frequently receives signals from multiple driving paths or shares a net with multiple fan-in branches. To model this physical arbitration without imposing static timing analysis traversals, incoming interaction vectors from in-neighbors $j \in \mathcal{N}_{\text{in}}(i)$ undergo localized sibling competition:
+In digital circuits, a sink pin frequently receives signals from multiple driving paths or shares a net with multiple fan-in branches. To model this physical arbitration without imposing static timing analysis traversals, incoming interaction vectors from in-neighbors $j \in \mathcal{N}_{\text{in}}(i)$ undergo localized sibling competition. The competitive driving priority logit is scored from the interaction context, and competitive acquisition coefficients are normalized via localized Softmax:
 \begin{equation}
     \alpha_{ji}^{(l)} = \frac{\exp\!\left(g\big(\Phi_{\text{evol}}(\mathbf{s}_j^{(l)}, \mathbf{s}_i^{(l)}, \mathbf{r}_{ji})\big)\right)}{\sum_{k \in \mathcal{N}_{\text{in}}(i)} \exp\!\left(g\big(\Phi_{\text{evol}}(\mathbf{s}_k^{(l)}, \mathbf{s}_i^{(l)}, \mathbf{r}_{ki})\big)\right)},
     \label{eq:sibling_competition}
 \end{equation}
-where $g: \mathbb{R}^{3d + 1 + d_r} \to \mathbb{R}$ scores the competitive driving priority of branch $(j, i)$. The net velocity displacement vector acting on particle $i$ at layer $l$ is then aggregated as:
+where $g: \mathbb{R}^{3d + 1 + d_r} \to \mathbb{R}$ evaluates the relative competitive strength of branch $(j, i)$. The net velocity displacement vector acting on particle $i$ at layer $l$ is then aggregated as:
 \begin{equation}
     \Delta \mathbf{s}_i^{(l)} = \sum_{j \in \mathcal{N}_{\text{in}}(i)} \alpha_{ji}^{(l)} \mathbf{m}_{ji}^{(l)}.
     \label{eq:displacement_agg}
@@ -77,7 +89,7 @@ Over $L$ stacked interaction layers (Figure~\ref{fig:overall_framework}, Stage 4
 
 This multi-layer evolution exhibits distinct progressive dynamics across depths. In the initial layers, the interaction field induces larger structural displacements, reorganizing the point set to encode macro-connectivity and global topological distances. As the network deepens across dozens of layers, the displacement magnitudes adaptively decrease, executing fine-grained non-linear adjustments to align timing arrivals and local driving balances.
 
-Importantly, this formulation maintains representation discriminability throughout deep propagation. In conventional message passing, repeated Laplacian averaging contracts node embeddings into the convex hull of their neighbors, collapsing distinct representations toward a uniform stationary mean. In contrast, our pairwise dynamics computes unconstrained, all-directional velocity offsets modulated by sibling competition and multi-dimensional physical relations. This mechanism preserves high-frequency feature variance across dozens of layers, enabling the model to capture deep multi-hop causal chains without suffering from feature collapse.
+Importantly, this formulation maintains representation discriminability throughout deep propagation. In conventional message passing, repeated Laplacian averaging contracts node embeddings into the convex hull of their neighbors, collapsing distinct representations toward a uniform stationary mean. In contrast, our pairwise dynamics computes unconstrained, all-directional velocity offsets modulated by competitive acquisition coefficients and multi-dimensional physical relations. This mechanism preserves high-frequency feature variance across dozens of layers, enabling the model to capture deep multi-hop causal chains without suffering from feature collapse.
 
 \subsection{Prior-Free Intrinsic Readout via Virtual Meter Nodes}
 \label{sec:method_readout}
@@ -100,9 +112,16 @@ For relation-level tasks defined over interconnections or arbitrary entity pairs
 \end{equation}
 Because relational physics have been encoded into relative particle displacements during evolution, this prior-free interface evaluates any connected or unconnected node pair in $O(1)$ complexity per query.
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/method03.pdf}
+  \caption{Hierarchical virtual meter network for unified whole-graph readout. Virtual meter nodes co-evolve hierarchically alongside physical circuit entities across interaction layers in a parallel reduction pyramid, condensing macroscopic properties into the root meter coordinate $\mathbf{s}_{\text{meter}}^{(L)}$ and unifying global graph aggregation into standard single-node readout.}
+  \label{fig:virtual_meter}
+\end{figure}
+
 \textbf{Whole-Graph Readout via Virtual Meter Nodes.} Extracting whole-circuit metrics, such as total placement area or total dynamic power, conventionally requires global pooling operators (e.g., sum, mean, or attention pooling). However, flat pooling over thousands of nodes frequently dilutes critical localized bottlenecks.
 
-To overcome this limitation, we introduce a virtual-node graph aggregation scheme. Specifically, we insert dedicated virtual meter nodes, denoted as $v_{\text{meter}} \in \mathcal{V}_{\text{virt}}$, into the circuit graph. Assigned initial measurement query vectors $\mathbf{x}_{\text{meter}}$ and connected to constituent circuit nodes through specialized virtual relation edges $\mathbf{e}_{\text{meter}}$, these virtual entities participate directly in the point-set interaction dynamics alongside regular circuit nodes under Equations~\eqref{eq:pairwise_basis}--\eqref{eq:layer_update}. Whole-graph metrics $\hat{Y}$ are then obtained by reading out the evolved virtual meter coordinates identically to physical nodes:
+To overcome this limitation, we introduce a hierarchical virtual meter network, as illustrated in Figure~\ref{fig:virtual_meter}. Specifically, we insert dedicated virtual meter nodes, denoted as $v_{\text{meter}} \in \mathcal{V}_{\text{virt}}$, into the circuit graph. Structured in a multi-level reduction pyramid, intermediate meters condense regional circuit clusters while a top-level root meter aggregates global status. Assigned initial measurement query vectors $\mathbf{x}_{\text{meter}}$ and connected to constituent circuit nodes through specialized virtual relation edges $\mathbf{e}_{\text{meter}}$, these virtual entities participate directly in the point-set interaction dynamics alongside regular circuit nodes under Equations~\eqref{eq:algebraic_operator}--\eqref{eq:layer_update}. Whole-graph metrics $\hat{Y}$ are then obtained by reading out the evolved root meter coordinate identically to standard physical nodes:
 \begin{equation}
     \hat{Y} = \text{MLP}_{\text{meter}}\left(\mathbf{s}_{\text{meter}}^{(L)}\right).
     \label{eq:readout_graph}
