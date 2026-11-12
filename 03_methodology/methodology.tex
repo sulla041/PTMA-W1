@@ -1,4 +1,11 @@
 \section{Methodology}
 \label{sec:method}
 
-% Section 3: Methodology (相互作用动力学与虚拟电表体系)
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/method01.pdf}
+  \caption{Overall framework of the proposed point-set graph dynamics. Stage 1: The circuit netlist is formulated as an attributed directed graph preserving heterogeneous gate features and continuous relation attributes. Stage 2: Entity nodes and multi-dimensional relations are projected into a unified latent space as a point set characterized by structural offsets. Stage 3: A trainable interaction dynamics field computes all-directional velocity displacements via pairwise node-relation operations. Stage 4: Representations evolve across dozens of stacked non-dissipative interaction layers, avoiding over-smoothing while capturing deep multi-hop dependencies. Stage 5: Target metrics across node, relation, and whole-graph levels are directly read out from final evolved embeddings.}
+  \label{fig:overall_framework}
+\end{figure*}
+
+% Section 3 核心子节将紧扣 Figure 2 的五个阶段展开
