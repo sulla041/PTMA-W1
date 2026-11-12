@@ -8,4 +8,93 @@
   \label{fig:overall_framework}
 \end{figure*}
 
-% Section 3 核心子节将紧扣 Figure 2 的五个阶段展开
+\subsection{Point-Set Modality Alignment}
+\label{sec:method_alignment}
+
+A digital circuit netlist is naturally represented as an attributed directed graph $\mathcal{G} = (\mathcal{V}, \mathcal{E})$, where $\mathcal{V}$ denotes the set of circuit entities (logic gates, primary inputs, and primary outputs) and $\mathcal{E}$ represents the set of directed physical interconnections and causal dependencies (Figure~\ref{fig:overall_framework}, Stage 1). Each node $i \in \mathcal{V}$ is endowed with an attribute vector $\mathbf{x}_i \in \mathbb{R}^{d_v}$ encoding intrinsic properties, such as cell function category, gate type, and pin direction. Unlike abstract graphs, each directed relation $(j, i) \in \mathcal{E}$ from driver $j$ to sink $i$ carries a complete multi-dimensional physical feature vector $\mathbf{e}_{ji} \in \mathbb{R}^{d_e}$, capturing continuous attributes such as fan-out load capacitance ($C_{\text{load}}$), driver pin impedance, and routing parasitic resistance.
+
+A primary challenge in circuit modeling stems from the representational disparity between these two distinct modalities: nodes exist as individual vectors, whereas relations exist as pair-wise feature vectors. Rather than compressing relation vectors into scalar adjacency weights or constructing hand-crafted heterogeneous graph rules, our framework establishes a unified point-set representation (Figure~\ref{fig:overall_framework}, Stage 2).
+
+Specifically, we view graph modeling as computing a latent structural displacement over the embeddings of an unordered set of entities. For each node $i \in \mathcal{V}$, an initial feature encoder maps its isolated attributes into a native embedding:
+\begin{equation}
+    \mathbf{h}_i^{(0)} = f_{\text{node}}(\mathbf{x}_i) \in \mathbb{R}^{d},
+    \label{eq:node_init}
+\end{equation}
+where $f_{\text{node}}: \mathbb{R}^{d_v} \to \mathbb{R}^d$ is parameterized by a multi-layer perceptron (MLP). Concurrently, a relation encoder projects multi-dimensional relation features into a dense relational space:
+\begin{equation}
+    \mathbf{r}_{ji} = f_{\text{rel}}(\mathbf{e}_{ji}) \in \mathbb{R}^{d_r},
+    \label{eq:rel_init}
+\end{equation}
+where $f_{\text{rel}}: \mathbb{R}^{d_e} \to \mathbb{R}^{d_r}$ preserves the complete continuous physical attributes without scalar down-scaling. In this aligned formulation, every node $i$ in the circuit is expressed through a base state $\mathbf{h}_i^{(0)}$ coupled with an accumulated structural offset $\boldsymbol{\delta}_i \in \mathbb{R}^d$, defining its final embedded state:
+\begin{equation}
+    \mathbf{z}_i = \mathbf{h}_i^{(0)} + \boldsymbol{\delta}_i.
+    \label{eq:structural_offset}
+\end{equation}
+By reformulating the circuit graph as a point set characterized by latent structural offsets, we transform the heterogeneous message-passing problem into a homogeneous set-evolution task.
+
+\subsection{Trainable Pairwise Interaction Dynamics Field}
+\label{sec:method_dynamics}
+
+To compute the structural displacement $\boldsymbol{\delta}_i$, we construct an end-to-end Trainable Interaction Dynamics Field (Figure~\ref{fig:overall_framework}, Stage 3). Rather than relying on passive neighborhood diffusion, the state evolution of each node is actively driven by directional pairwise interactions.
+
+At each interaction layer $l \in \{0, 1, \dots, L-1\}$, consider a directed connection $(j, i) \in \mathcal{E}$, where driver node $j$ interacts with sink node $i$. The interaction between their intermediate latent states $\mathbf{h}_j^{(l)}$ and $\mathbf{h}_i^{(l)}$, conditioned on the continuous relation embedding $\mathbf{r}_{ji}$, is evaluated via a pairwise dynamics function $\Psi$:
+\begin{equation}
+    \mathbf{m}_{ji}^{(l)} = \Psi\left(\mathbf{h}_j^{(l)}, \mathbf{h}_i^{(l)}, \mathbf{r}_{ji}\right) \in \mathbb{R}^d.
+    \label{eq:pairwise_interaction}
+\end{equation}
+Here, $\Psi$ models element-wise operational interactions, combining differential displacements $(\mathbf{h}_j^{(l)} - \mathbf{h}_i^{(l)})$, multiplicative gating, and high-dimensional projections through non-linear layers. Crucially, the relation vector $\mathbf{r}_{ji}$ participates directly as a continuous physical condition in $\Psi$, allowing attributes like load capacitance and wire resistance to modulate the direction and magnitude of the interaction vector $\mathbf{m}_{ji}^{(l)}$.
+
+In real digital circuits, a sink pin often receives signals from multiple driving paths or shares a net with multiple fan-in branches. To model this physical arbitration without imposing static timing analysis traversals, we introduce a localized sibling competition mechanism. For each sink node $i$, the incoming interaction vectors from its in-neighbors $j \in \mathcal{N}_{\text{in}}(i)$ undergo competitive weighting:
+\begin{equation}
+    \alpha_{ji}^{(l)} = \frac{\exp\left(g(\mathbf{h}_j^{(l)}, \mathbf{h}_i^{(l)}, \mathbf{r}_{ji})\right)}{\sum_{k \in \mathcal{N}_{\text{in}}(i)} \exp\left(g(\mathbf{h}_k^{(l)}, \mathbf{h}_i^{(l)}, \mathbf{r}_{ki})\right)},
+    \label{eq:sibling_competition}
+\end{equation}
+where $g: \mathbb{R}^{2d + d_r} \to \mathbb{R}$ evaluates the competitive driving priority of branch $(j, i)$. The aggregated velocity displacement vector for node $i$ at layer $l$ is then computed as:
+\begin{equation}
+    \Delta \mathbf{s}_i^{(l)} = \sum_{j \in \mathcal{N}_{\text{in}}(i)} \alpha_{ji}^{(l)} \mathbf{m}_{ji}^{(l)}.
+    \label{eq:displacement_agg}
+\end{equation}
+Because $\Delta \mathbf{s}_i^{(l)}$ is an all-directional displacement vector rather than a convex combination of neighbor states, it acts as an active force vector updating the latent coordinate of node $i$.
+
+\subsection{Deep Multi-Layer Evolution}
+\label{sec:method_evolution}
+
+With the displacement vector $\Delta \mathbf{s}_i^{(l)}$ established, each node updates its state through a continuous additive update:
+\begin{equation}
+    \mathbf{h}_i^{(l+1)} = \mathbf{h}_i^{(l)} + \Delta \mathbf{s}_i^{(l)}.
+    \label{eq:layer_update}
+\end{equation}
+Over $L$ stacked interaction layers (Figure~\ref{fig:overall_framework}, Stage 4), the cumulative structural offset is the integral sum of these directional displacements:
+\begin{equation}
+    \boldsymbol{\delta}_i = \sum_{l=0}^{L-1} \Delta \mathbf{s}_i^{(l)}.
+    \label{eq:accumulated_delta}
+\end{equation}
+
+This multi-layer evolution exhibits distinct progressive dynamics across depths. In the initial layers, the interaction field induces larger structural displacements, reorganizing the point set to encode macro-connectivity and global topological distances. As the network deepens across dozens of layers, the displacement magnitudes adaptively decrease, executing fine-grained non-linear adjustments to align timing arrivals and local driving balances. 
+
+Importantly, this formulation maintains representation discriminability throughout deep propagation. In conventional message passing, repeated Laplacian averaging contracts node embeddings toward a common mean, extinguishing path-specific differences. In contrast, our pairwise dynamics computes directed velocity vectors modulated by sibling competition and multi-dimensional physical relations. This mechanism preserves high-frequency feature variance across dozens of layers, enabling the model to capture deep multi-hop causal chains without suffering from feature collapse.
+
+\subsection{Unified Readout via Virtual Meter Nodes}
+\label{sec:method_readout}
+
+Upon completing $L$ layers of evolution, downstream circuit predictions are performed through a unified embedding readout interface (Figure~\ref{fig:overall_framework}, Stage 5).
+
+\textbf{Node-Level and Pair-Level Readout.} For micro-level predictions associated with individual pins or gates (such as pin arrival time, slew, or local cell leakage), predictions are obtained directly from the final node embeddings:
+\begin{equation}
+    \hat{y}_i = \text{MLP}_{\text{node}}(\mathbf{z}_i).
+    \label{eq:readout_node}
+\end{equation}
+For relation-level tasks defined over interconnections (such as net wirelength or interconnect delay), predictions are computed by querying the pairwise interaction between incident terminal embeddings and the relation vector:
+\begin{equation}
+    \hat{y}_{ji} = \text{MLP}_{\text{pair}}(\mathbf{z}_j, \mathbf{z}_i, \mathbf{r}_{ji}).
+    \label{eq:readout_pair}
+\end{equation}
+
+\textbf{Whole-Graph Readout via Virtual Meter Nodes.} Extracting whole-circuit metrics, such as total placement area or total dynamic power, conventionally requires global pooling operators (e.g., sum, mean, or attention pooling). However, flat pooling over thousands of nodes frequently dilutes critical localized bottlenecks. 
+
+To overcome this limitation, we introduce a virtual-node graph aggregation scheme. Specifically, we insert dedicated virtual meter nodes, denoted as $v_{\text{meter}} \in \mathcal{V}_{\text{virt}}$, into the circuit graph. Each virtual meter node is assigned an initial measurement query vector $\mathbf{x}_{\text{meter}}$, and is connected to constituent circuit nodes through specialized virtual relation edges $\mathbf{e}_{\text{meter}}$. These virtual entities participate directly in the point-set interaction dynamics alongside regular circuit nodes, updating their states according to Equations~\eqref{eq:pairwise_interaction}--\eqref{eq:layer_update}. Whole-graph metrics $\hat{Y}$ are then obtained by directly reading out the evolved virtual meter embedding:
+\begin{equation}
+    \hat{Y} = \text{MLP}_{\text{meter}}(\mathbf{z}_{\text{meter}}).
+    \label{eq:readout_graph}
+\end{equation}
+This formulation unifies whole-graph metric extraction into the exact same node embedding readout interface, establishing a clean, end-to-end framework without task-specific graph post-processing.
