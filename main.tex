@@ -30,6 +30,10 @@
 \renewcommand{\dbltopfraction}{0.95}
 \renewcommand{\dblfloatpagefraction}{0.85}
 
+% 每单栏严格最多 1 个置顶图，杜绝同一栏内多图堆叠，强制 Figure 3 与 Figure 4 分立两栏
+\setcounter{topnumber}{1}
+\setcounter{dbltopnumber}{1}
+
 % 引入独立全局图布局控制器
 \input{figures_layout.tex}
 

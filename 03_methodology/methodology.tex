@@ -20,7 +20,7 @@ where $f_{\text{node}}: \mathbb{R}^{d_v} \to \mathbb{R}^d$ is parameterized by a
     \mathbf{r}_{ji} = f_{\text{rel}}(\mathbf{e}_{ji}) \in \mathbb{R}^{d_r},
     \label{eq:rel_init}
 \end{equation}
-where $f_{\text{rel}}: \mathbb{R}^{d_e} \to \mathbb{R}^{d_r}$ preserves the complete continuous physical attributes without scalar down-scaling. In this aligned formulation, every entity $i in \mathcal{V}$ in the circuit expresses its terminal state $\mathbf{s}_i^{(L)}$ as its native coordinate $\mathbf{s}_i^{(0)}$ displaced by an accumulated structural offset $\boldsymbol{\delta}_i \in \mathbb{R}^d$:
+where $f_{\text{rel}}: \mathbb{R}^{d_e} \to \mathbb{R}^{d_r}$ preserves the complete continuous physical attributes without scalar down-scaling. In this aligned formulation, every entity $i \in \mathcal{V}$ in the circuit expresses its terminal state $\mathbf{s}_i^{(L)}$ as its native coordinate $\mathbf{s}_i^{(0)}$ displaced by an accumulated structural offset $\boldsymbol{\delta}_i \in \mathbb{R}^d$:
 \begin{equation}
     \mathbf{s}_i^{(L)} = \mathbf{s}_i^{(0)} + \boldsymbol{\delta}_i.
     \label{eq:structural_offset}
@@ -30,8 +30,8 @@ By reformulating the circuit graph as a point set characterized by latent struct
 \subsection{Trainable Pairwise Interaction Dynamics Field}
 \label{sec:method_dynamics}
 
-% --- Page 3 中期触发: 确保双生并立图 100% 精准降落在 Page 4 顶部整行 ---
-\renderFigureTwinDynamicsAndMeters{}
+% --- 部署独立单栏 Figure 3 (由顶层规则自动锁定在 Page 4 左栏顶部) ---
+\renderFigureDynamics{}
 
 To compute the structural displacement $\boldsymbol{\delta}_i$, we construct an end-to-end Trainable Interaction Dynamics Field (Figure~\ref{fig:overall_framework}, Stage 3). Rather than relying on passive neighborhood diffusion, the trajectory of each particle is actively driven by directional pairwise interactions and competitive acquisition coefficients.
 
@@ -63,6 +63,9 @@ where $g: \mathbb{R}^{3d + 1 + d_r} \to \mathbb{R}$ evaluates the relative compe
     \label{eq:displacement_agg}
 \end{equation}
 Because $\Delta \mathbf{s}_i^{(l)}$ is an all-directional displacement vector rather than a convex combination of neighbor states, it acts as an active force vector updating the latent coordinate of particle $i$ from $\mathbf{s}_i^{(l)}$ to $\mathbf{s}_i^{(l+1)}$. Notably, for root entities with zero in-degree such as primary inputs and clock sources ($\mathcal{N}_{\text{in}}(i) = \emptyset$), the empty-set summation naturally evaluates to $\Delta \mathbf{s}_i^{(l)} = \mathbf{0}$, preserving zero-displacement boundary invariance without requiring ad-hoc structural constraints.
+
+% --- 部署独立单栏 Figure 4 (紧接着由顶层规则自动锁定在 Page 4 右栏顶部，正文自适应填补下方空白) ---
+\renderFigureMeters{}
 
 \subsection{Deep Multi-Layer Evolution}
 \label{sec:method_evolution}
