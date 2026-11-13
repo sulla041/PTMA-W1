@@ -30,6 +30,9 @@ By reformulating the circuit graph as a point set characterized by latent struct
 \subsection{Trainable Pairwise Interaction Dynamics Field}
 \label{sec:method_dynamics}
 
+% --- Page 3 中期触发: 确保双生并立图 100% 精准降落在 Page 4 顶部整行 ---
+\renderFigureTwinDynamicsAndMeters{}
+
 To compute the structural displacement $\boldsymbol{\delta}_i$, we construct an end-to-end Trainable Interaction Dynamics Field (Figure~\ref{fig:overall_framework}, Stage 3). Rather than relying on passive neighborhood diffusion, the trajectory of each particle is actively driven by directional pairwise interactions and competitive acquisition coefficients.
 
 As detailed in the microscopic architecture of Figure~\ref{fig:pairwise_dynamics}, for each directed branch $(j, i) \in \mathcal{E}$ where driver $j$ interacts with sink $i$ at layer $l$, we first extract pairwise algebraic divergence features through an operator $\Phi$:
@@ -78,9 +81,6 @@ Over $L$ stacked interaction layers (Figure~\ref{fig:overall_framework}, Stage 4
 This multi-layer evolution exhibits distinct progressive dynamics across depths. In the initial layers, the interaction field induces larger structural displacements, reorganizing the point set to encode macro-connectivity and global topological distances. As the network deepens across dozens of layers, the displacement magnitudes adaptively decrease, executing fine-grained non-linear adjustments to align timing arrivals and local driving balances.
 
 Importantly, this formulation maintains representation discriminability throughout deep propagation. In conventional message passing, repeated Laplacian averaging contracts node embeddings into the convex hull of their neighbors, collapsing distinct representations toward a uniform stationary mean. In contrast, our pairwise dynamics computes unconstrained, all-directional velocity offsets modulated by competitive acquisition coefficients and multi-dimensional physical relations. This mechanism preserves high-frequency feature variance across dozens of layers, enabling the model to capture deep multi-hop causal chains without suffering from feature collapse.
-
-% --- Page 3 -> Page 4 跨页触发点: 强制调用双生并立宏，100% 绝对水平对称安插在 Page 4 顶部两栏 ---
-\renderFigureTwinDynamicsAndMeters{}
 
 \subsection{Prior-Free Intrinsic Readout via Virtual Meter Nodes}
 \label{sec:method_readout}
