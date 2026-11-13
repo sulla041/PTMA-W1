@@ -4,12 +4,12 @@
 %% 正文纯文本与数学公式将自由流动，自适应无缝填充图下方留出的全部空白！
 %% ==============================================================================
 
-%% [Figure 1]: 电路图建模范式对比 (锁定第 1 页右上角)
+%% [Figure 1]: 电路图建模范式对比 (锁定第 1 页右上角，精炼图注)
 \newcommand{\renderFigureIntro}{%
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/intro01.pdf}
-  \caption{Comparison of circuit graph modeling paradigms. Top: Realistic netlist with multi-dimensional interconnect parasitics along deep paths. Middle: Conventional GNNs compress edge attributes into scalars and suffer from over-smoothing across deep layers, collapsing node embeddings. Bottom: Our point-set graph dynamics preserves complete relation vectors and computes directional structural offsets, maintaining representation discriminability across deep propagation.}
+  \caption{Comparison of circuit modeling paradigms. Unlike conventional GNNs that compress edge parasitics into scalars and suffer from deep over-smoothing, our point-set dynamics preserves multi-dimensional relation vectors and drives directional coordinate offsets.}
   \label{fig:intro_paradigm}
 \end{figure}%
 }
