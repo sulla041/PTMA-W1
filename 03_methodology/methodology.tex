@@ -1,13 +1,6 @@
 \section{Methodology}
 \label{sec:method}
 
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=\textwidth]{figures/method01.pdf}
-  \caption{Overall framework of the point-set graph dynamics across five coordinated stages: circuit graph formulation, point-set modality alignment, interaction field dynamics, deep multi-layer evolution, and unified multi-level readout.}
-  \label{fig:overall_framework}
-\end{figure*}
-
 As illustrated in Figure~\ref{fig:overall_framework}, our methodology unifies circuit representation learning by reformulating the attributed netlist into an evolving point set, progressing through five coordinated stages from graph formulation to unified readout.
 
 \subsection{Point-Set Modality Alignment}
@@ -39,13 +32,6 @@ By reformulating the circuit graph as a point set characterized by latent struct
 
 To compute the structural displacement $\boldsymbol{\delta}_i$, we construct an end-to-end Trainable Interaction Dynamics Field (Figure~\ref{fig:overall_framework}, Stage 3). Rather than relying on passive neighborhood diffusion, the trajectory of each particle is actively driven by directional pairwise interactions and competitive acquisition coefficients.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/method02.pdf}
-  \caption{Microscopic architecture of the pairwise interaction dynamics field and localized sibling competition arbitration.}
-  \label{fig:pairwise_dynamics}
-\end{figure}
-
 As detailed in the microscopic architecture of Figure~\ref{fig:pairwise_dynamics}, for each directed branch $(j, i) \in \mathcal{E}$ where driver $j$ interacts with sink $i$ at layer $l$, we first extract pairwise algebraic divergence features through an operator $\Phi$:
 \begin{equation}
     \mathbf{p}_{ji}^{(l)} = \Phi\left(\mathbf{s}_j^{(l)}, \mathbf{s}_i^{(l)}\right) = \Big[\, \big(\mathbf{s}_j^{(l)} - \mathbf{s}_i^{(l)}\big) \;\|\; \big\|\mathbf{s}_j^{(l)} - \mathbf{s}_i^{(l)}\big\|_2 \,\Big] \in \mathbb{R}^{d + 1},
@@ -74,6 +60,20 @@ where $g: \mathbb{R}^{3d + 1 + d_r} \to \mathbb{R}$ evaluates the relative compe
     \label{eq:displacement_agg}
 \end{equation}
 Because $\Delta \mathbf{s}_i^{(l)}$ is an all-directional displacement vector rather than a convex combination of neighbor states, it acts as an active force vector updating the latent coordinate of particle $i$ from $\mathbf{s}_i^{(l)}$ to $\mathbf{s}_i^{(l+1)}$. Notably, for root entities with zero in-degree such as primary inputs and clock sources ($\mathcal{N}_{\text{in}}(i) = \emptyset$), the empty-set summation naturally evaluates to $\Delta \mathbf{s}_i^{(l)} = \mathbf{0}$, preserving zero-displacement boundary invariance without requiring ad-hoc structural constraints.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/method02.pdf}
+  \caption{Microscopic architecture of the pairwise interaction dynamics field and localized sibling competition arbitration.}
+  \label{fig:pairwise_dynamics}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/method03.pdf}
+  \caption{Hierarchical virtual meter network structured in a parallel reduction pyramid for unified whole-graph readout.}
+  \label{fig:virtual_meter}
+\end{figure}
 
 \subsection{Deep Multi-Layer Evolution}
 \label{sec:method_evolution}
@@ -113,13 +113,6 @@ For relation-level tasks defined over interconnections or arbitrary entity pairs
     \label{eq:readout_pair}
 \end{equation}
 Because relational physics have been encoded into relative particle displacements during evolution, this prior-free interface evaluates any connected or unconnected node pair in $O(1)$ complexity per query.
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/method03.pdf}
-  \caption{Hierarchical virtual meter network structured in a parallel reduction pyramid for unified whole-graph readout.}
-  \label{fig:virtual_meter}
-\end{figure}
 
 \textbf{Whole-Graph Readout via Virtual Meter Nodes.} Extracting whole-circuit metrics, such as total placement area or total dynamic power, conventionally requires global pooling operators (e.g., sum, mean, or attention pooling). However, flat pooling over thousands of nodes frequently dilutes critical localized bottlenecks.
 
