@@ -20,7 +20,7 @@ where $f_{\text{node}}: \mathbb{R}^{d_v} \to \mathbb{R}^d$ is parameterized by a
     \mathbf{r}_{ji} = f_{\text{rel}}(\mathbf{e}_{ji}) \in \mathbb{R}^{d_r},
     \label{eq:rel_init}
 \end{equation}
-where $f_{\text{rel}}: \mathbb{R}^{d_e} \to \mathbb{R}^{d_r}$ preserves the complete continuous physical attributes without scalar down-scaling. In this aligned formulation, every entity $i$ in the circuit expresses its terminal state $\mathbf{s}_i^{(L)}$ as its native coordinate $\mathbf{s}_i^{(0)}$ displaced by an accumulated structural offset $\boldsymbol{\delta}_i \in \mathbb{R}^d$:
+where $f_{\text{rel}}: \mathbb{R}^{d_e} \to \mathbb{R}^{d_r}$ preserves the complete continuous physical attributes without scalar down-scaling. In this aligned formulation, every entity $i in \mathcal{V}$ in the circuit expresses its terminal state $\mathbf{s}_i^{(L)}$ as its native coordinate $\mathbf{s}_i^{(0)}$ displaced by an accumulated structural offset $\boldsymbol{\delta}_i \in \mathbb{R}^d$:
 \begin{equation}
     \mathbf{s}_i^{(L)} = \mathbf{s}_i^{(0)} + \boldsymbol{\delta}_i.
     \label{eq:structural_offset}
@@ -79,9 +79,8 @@ This multi-layer evolution exhibits distinct progressive dynamics across depths.
 
 Importantly, this formulation maintains representation discriminability throughout deep propagation. In conventional message passing, repeated Laplacian averaging contracts node embeddings into the convex hull of their neighbors, collapsing distinct representations toward a uniform stationary mean. In contrast, our pairwise dynamics computes unconstrained, all-directional velocity offsets modulated by competitive acquisition coefficients and multi-dimensional physical relations. This mechanism preserves high-frequency feature variance across dozens of layers, enabling the model to capture deep multi-hop causal chains without suffering from feature collapse.
 
-% --- Page 3 -> Page 4 跨页触发点: 在此处部署 Figure 3 与 Figure 4，精准降落 Page 4 顶部两栏 ---
-\renderFigureDynamics{}
-\renderFigureMeters{}
+% --- Page 3 -> Page 4 跨页触发点: 强制调用双生并立宏，100% 绝对水平对称安插在 Page 4 顶部两栏 ---
+\renderFigureTwinDynamicsAndMeters{}
 
 \subsection{Prior-Free Intrinsic Readout via Virtual Meter Nodes}
 \label{sec:method_readout}

@@ -24,22 +24,22 @@
 \end{figure*}%
 }
 
-%% [Figure 3]: 局部相互作用场与同伴竞争核 (锁定第 4 页左上角)
-\newcommand{\renderFigureDynamics}{%
-\begin{figure}[t]
+%% [Figure 3 & Figure 4]: 第 4 页双栏一左一右绝对对称并立 (Symmetric Twin Header)
+%% 采用跨双栏 figure* + 左右对半 minipage，100% 杜绝单栏堆叠，强制左右并列！
+\newcommand{\renderFigureTwinDynamicsAndMeters}{%
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures/method02.pdf}
-  \caption{Microscopic architecture of the pairwise interaction dynamics field and localized sibling competition arbitration.}
-  \label{fig:pairwise_dynamics}
-\end{figure}%
-}
-
-%% [Figure 4]: 分层虚拟电表网络金字塔 (锁定第 4 页右上角)
-\newcommand{\renderFigureMeters}{%
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/method03.pdf}
-  \caption{Hierarchical virtual meter network structured in a parallel reduction pyramid for unified whole-graph readout.}
-  \label{fig:virtual_meter}
-\end{figure}%
+  \begin{minipage}[t]{0.485\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/method02.pdf}
+    \caption{Microscopic architecture of the pairwise interaction dynamics field and localized sibling competition arbitration.}
+    \label{fig:pairwise_dynamics}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.485\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/method03.pdf}
+    \caption{Hierarchical virtual meter network structured in a parallel reduction pyramid for unified whole-graph readout.}
+    \label{fig:virtual_meter}
+  \end{minipage}
+\end{figure*}%
 }
