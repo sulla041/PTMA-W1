@@ -22,6 +22,14 @@
 \usepackage{subcaption}
 \usepackage{balance}
 
+% 放宽浮动体排版参数，防止双栏大图与多个单栏图造成排版死锁与浮动体堆积到文末
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.85}
+\renewcommand{\dbltopfraction}{0.95}
+\renewcommand{\dblfloatpagefraction}{0.85}
+
 \begin{document}
 
 \title{Dynamic Interactions Define the Embedding: End-to-End Point-Set Graph Modeling for Circuit Feature Prediction}
