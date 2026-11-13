@@ -1,13 +1,6 @@
 \section{Introduction}
 \label{sec:intro}
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/intro01.pdf}
-  \caption{Comparison of circuit graph modeling paradigms. Top: Realistic netlist with multi-dimensional interconnect parasitics along deep paths. Middle: Conventional GNNs compress edge attributes into scalars and suffer from over-smoothing across deep layers, collapsing node embeddings. Bottom: Our point-set graph dynamics preserves complete relation vectors and computes directional structural offsets, maintaining representation discriminability across deep propagation.}
-  \label{fig:intro_paradigm}
-\end{figure}
-
 The rapid emergence of large language models (LLMs) for automated register-transfer level (RTL) generation accelerates early chip design, yet realizing software-like agile development critically hinges on rapid physical evaluation. While generative models produce RTL code in seconds, evaluating physical timing and power via downstream synthesis and layout still requires hours or days. Fast and accurate circuit graph representation learning is therefore vital to bridge this gap. However, digital circuits present a unique modeling dilemma: signal propagation traverses deep multi-hop logic chains, while interconnections carry multi-dimensional continuous physical parasitics, such as driving impedances and fan-out load capacitances ($C_{\text{load}}$).
 
 Conventional message-passing neural networks (MPNNs)~\cite{kipf2017gcn,velickovic2018gat} fail to address both challenges simultaneously (Figure~\ref{fig:intro_paradigm}). First, capturing deep logic dependencies requires stacking dozens of layers, where recursive neighborhood averaging acts as a continuous Laplacian smoothing operator, collapsing distinct gate identities and timing differentials into uniform states via over-smoothing~\cite{rusch2023survey}. Second, existing circuit GNNs typically compress multi-dimensional interconnection parasitics into scalar adjacency weights~\cite{velickovic2018gat,preroutgnn} or rely on ad-hoc heterogeneous graph heuristics~\cite{timingpredict,deepgate2}, severely discarding continuous electrical context.

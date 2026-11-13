@@ -1,13 +1,6 @@
 \section{Related Work}
 \label{sec:related}
 
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=\textwidth]{figures/method01.pdf}
-  \caption{Overall framework of the point-set graph dynamics across five coordinated stages: circuit graph formulation, point-set modality alignment, interaction field dynamics, deep multi-layer evolution, and unified multi-level readout.}
-  \label{fig:overall_framework}
-\end{figure*}
-
 \subsection{Deep GNNs and Over-Smoothing}
 Message-passing neural networks (MPNNs), including Graph Convolutional Networks (GCN)~\cite{kipf2017gcn} and Graph Attention Networks (GAT)~\cite{velickovic2018gat}, recursively aggregate spatial representations across immediate topological neighbors. To capture long-range contextual dependencies across deep graphs, subsequent studies introduced residual connections and identity mappings such as GCNII~\cite{gcnii}, directional message decoupling formulated in DirGNN~\cite{dirgnn}, and hybrid graph Transformers such as GraphGPS~\cite{graphgps}. Despite these structural improvements, the underlying state transition in these frameworks still relies on recursive neighborhood aggregation. On graphs characterized by deep causal dependency paths, repeated spatial averaging functions as a continuous Laplacian smoothing operator, contracting node representations along principal Dirichlet eigenspaces and causing severe over-smoothing~\cite{rusch2023survey}. This mathematical collapse washes out high-frequency feature differentials, rendering deep message passing fundamentally ill-suited for preserving the sharp arrival-time gradients and distinct logic identities inherent to digital circuits. Unlike these spatial averaging frameworks that perform convex combinations over local neighborhoods, our method formulates state evolution as an all-directional velocity displacement field driven by pairwise algebraic operations and competitive sibling arbitration, preserving representation discriminability and high-frequency variance across dozens of layers.
 

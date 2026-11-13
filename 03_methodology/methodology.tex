@@ -61,20 +61,6 @@ where $g: \mathbb{R}^{3d + 1 + d_r} \to \mathbb{R}$ evaluates the relative compe
 \end{equation}
 Because $\Delta \mathbf{s}_i^{(l)}$ is an all-directional displacement vector rather than a convex combination of neighbor states, it acts as an active force vector updating the latent coordinate of particle $i$ from $\mathbf{s}_i^{(l)}$ to $\mathbf{s}_i^{(l+1)}$. Notably, for root entities with zero in-degree such as primary inputs and clock sources ($\mathcal{N}_{\text{in}}(i) = \emptyset$), the empty-set summation naturally evaluates to $\Delta \mathbf{s}_i^{(l)} = \mathbf{0}$, preserving zero-displacement boundary invariance without requiring ad-hoc structural constraints.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/method02.pdf}
-  \caption{Microscopic architecture of the pairwise interaction dynamics field and localized sibling competition arbitration.}
-  \label{fig:pairwise_dynamics}
-\end{figure}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/method03.pdf}
-  \caption{Hierarchical virtual meter network structured in a parallel reduction pyramid for unified whole-graph readout.}
-  \label{fig:virtual_meter}
-\end{figure}
-
 \subsection{Deep Multi-Layer Evolution}
 \label{sec:method_evolution}
 

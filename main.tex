@@ -30,6 +30,9 @@
 \renewcommand{\dbltopfraction}{0.95}
 \renewcommand{\dblfloatpagefraction}{0.85}
 
+% 引入独立全局图布局控制器
+\input{figures_layout.tex}
+
 \begin{document}
 
 \title{Dynamic Interactions Define the Embedding: End-to-End Point-Set Graph Modeling for Circuit Feature Prediction}
@@ -42,8 +45,20 @@
 
 \maketitle
 
+% --- Page 1: 渲染 Figure 1 (范式对比图，锁定 Page 1 右上角) ---
+\renderFigureIntro{}
+
 \input{01_introduction/introduction.tex}
+
+% --- Page 2 -> Page 3 跨页点: 提前部署 Figure 2 (五阶段双栏大图，锁定 Page 3 正上方) ---
+\renderFigureFramework{}
+
 \input{02_related_work/related_work.tex}
+
+% --- Page 3 -> Page 4 跨页点: 部署 Figure 3 与 Figure 4 (一左一右对称锁定 Page 4 顶部两栏) ---
+\renderFigureDynamics{}
+\renderFigureMeters{}
+
 \input{03_methodology/methodology.tex}
 \input{04_experiments/experiments.tex}
 \input{05_discussion/discussion.tex}

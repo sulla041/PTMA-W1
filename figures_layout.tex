@@ -1,0 +1,45 @@
+%% ==============================================================================
+%% figures_layout.tex: 独立全局图布局控制器 (Decoupled Visual Framework)
+%% 将所有图画声明从正文章节中彻底抽离，实现图与正文文本解耦。
+%% 正文纯文本与数学公式将自由流动，自适应无缝填充图下方留出的全部空白！
+%% ==============================================================================
+
+%% [Figure 1]: 电路图建模范式对比 (锁定第 1 页右上角)
+\newcommand{\renderFigureIntro}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/intro01.pdf}
+  \caption{Comparison of circuit graph modeling paradigms. Top: Realistic netlist with multi-dimensional interconnect parasitics along deep paths. Middle: Conventional GNNs compress edge attributes into scalars and suffer from over-smoothing across deep layers, collapsing node embeddings. Bottom: Our point-set graph dynamics preserves complete relation vectors and computes directional structural offsets, maintaining representation discriminability across deep propagation.}
+  \label{fig:intro_paradigm}
+\end{figure}%
+}
+
+%% [Figure 2]: 五阶段全局动力学演化大图 (锁定第 3 页正上方跨双栏)
+\newcommand{\renderFigureFramework}{%
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/method01.pdf}
+  \caption{Overall framework of the point-set graph dynamics across five coordinated stages: circuit graph formulation, point-set modality alignment, interaction field dynamics, deep multi-layer evolution, and unified multi-level readout.}
+  \label{fig:overall_framework}
+\end{figure*}%
+}
+
+%% [Figure 3]: 局部相互作用场与同伴竞争核 (锁定第 4 页左上角)
+\newcommand{\renderFigureDynamics}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/method02.pdf}
+  \caption{Microscopic architecture of the pairwise interaction dynamics field and localized sibling competition arbitration.}
+  \label{fig:pairwise_dynamics}
+\end{figure}%
+}
+
+%% [Figure 4]: 分层虚拟电表网络金字塔 (锁定第 4 页右上角)
+\newcommand{\renderFigureMeters}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/method03.pdf}
+  \caption{Hierarchical virtual meter network structured in a parallel reduction pyramid for unified whole-graph readout.}
+  \label{fig:virtual_meter}
+\end{figure}%
+}
